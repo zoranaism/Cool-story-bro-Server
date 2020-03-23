@@ -7,19 +7,12 @@ const HomePage = require("../models").homepage;
 const router = new Router();
 
 router.get("/", async (req, res, next) => {
-  const limit = req.params.limit || 3;
-  const offset = req.params.offset || 0;
-
-
-  console.log("This is the limit", limit);
-  console.log("This is the offset", offset);
+  // const limit = req.params.limit || 3;
+  // const offset = req.params.offset || 0;
   
   try {
-    const homepages = await HomePage.findAll({
-      limit,
-      offset
-    });
-    res.json(homepages);
+    const allHomepages = await HomePage.findAll();
+    res.status(200).json(allHomepages);
   } catch (e) {
     next(e);
   }

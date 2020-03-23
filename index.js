@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 
+
+
 /**
  * Middlewares
  *
@@ -8,6 +10,9 @@ const app = express();
  * If you configure routes before the middleware, these routes will not use them
  *
  */
+
+const jsonParser = express.json();
+app.use(jsonParser);
 
 /**
  * morgan:
@@ -97,6 +102,7 @@ const authMiddleWare = require("./auth/middleware");
  * Define your routes here (now that middlewares are configured)
  */
 
+
 // GET endpoint for testing purposes, can be removed
 app.get("/", (req, res) => {
   res.send("Hi from express");
@@ -111,25 +117,37 @@ app.post("/echo", (req, res) => {
   });
 });
 
-// POST endpoint which requires a token for testing purposes, can be removed
-app.post("/authorized_post_request", authMiddleWare, (req, res) => {
-  // accessing user that was added to req by the auth middleware
-  const user = req.user;
-  // don't send back the password hash
-  delete user.dataValues["password"];
 
-  res.json({
-    youPosted: {
-      ...req.body
-    },
-    userFoundWithToken: {
-      ...user.dataValues
-    }
-  });
-});
+// // POST endpoint which requires a token for testing purposes, can be removed
+// app.post("/authorized_post_request", authMiddleWare, (req, res) => {
+//   // accessing user that was added to req by the auth middleware
+//   const user = req.user;
+//   // don't send back the password hash
+//   delete user.dataValues["password"];
+
+//   res.json({
+//     youPosted: {
+//       ...req.body
+//     },
+//     userFoundWithToken: {
+//       ...user.dataValues
+//     }
+//   });
+// });
 
 const authRouter = require("./routers/auth");
 app.use("/", authRouter);
+
+
+
+
+
+const homepagesRouter = require("./routers/homepages");
+app.use("/homepages", homepagesRouter);
+
+
+
+
 
 // Listen for connections on specified port (default is port 4000)
 const { PORT } = require("./config/constants");

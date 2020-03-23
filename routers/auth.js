@@ -3,6 +3,8 @@ const { Router } = require("express");
 const { toJWT } = require("../auth/jwt");
 const authMiddleware = require("../auth/middleware");
 const User = require("../models/").user;
+const HomePage = require("../models/").homepage;
+const Story = require("../models/").story;
 const { SALT_ROUNDS } = require("../config/constants");
 
 const router = new Router();
@@ -66,10 +68,24 @@ router.post("/signup", async (req, res) => {
 // The /me endpoint can be used to:
 // - get the users email & name using only their token
 // - checking if a token is (still) valid
-router.get("/me", authMiddleware, async (req, res) => {
+router.get("/me", authMiddleware, async (req, res, next) => {
   // don't send back the password hash
-  delete req.user.dataValues["password"];
-  res.status(200).send({ ...req.user.dataValues });
+  try {
+    const userId = req.user.dataValues["id"];
+    const user = await User.findByPk(userId, {
+      include: [
+        {
+          model: HomePage,
+          include: [Story]
+        }
+      ]
+    });
+    delete user.dataValues["password"];
+    res.status(200).send({ user });
+    // console.log(req.user.dataValues);
+  } catch (e) {
+    res.status(400).send({ message: "Something went wrong, sorry" });
+  }
 });
 
 module.exports = router;

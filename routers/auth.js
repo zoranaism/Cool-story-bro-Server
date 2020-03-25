@@ -3,7 +3,7 @@ const { Router } = require("express");
 const { toJWT } = require("../auth/jwt");
 const authMiddleware = require("../auth/middleware");
 const User = require("../models/").user;
-const HomePage = require("../models/").homepage;
+const Homepage = require("../models/").homepage;
 const Story = require("../models/").story;
 const { SALT_ROUNDS } = require("../config/constants");
 
@@ -19,7 +19,14 @@ router.post("/login", async (req, res, next) => {
         .send({ message: "Please provide both email and password" });
     }
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email },
+      include: {
+        model: Homepage,
+        include: [Story],
+        order: [[Story, "createdAt", "DESC"]]
+      }
+    });
 
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(400).send({
@@ -38,8 +45,9 @@ router.post("/login", async (req, res, next) => {
 
 router.post("/signup", async (req, res) => {
   const { email, password, name } = req.body;
+
   if (!email || !password || !name) {
-    return res.status(400).send("Please provide an email, password and a name");
+    return res.status(400).send({ message: "Please provide an email, password and a name" });
   }
 
   try {
@@ -53,7 +61,20 @@ router.post("/signup", async (req, res) => {
 
     const token = toJWT({ userId: newUser.id });
 
-    res.status(201).json({ token, ...newUser.dataValues });
+    const homepage = await Homepage.create({
+      title: `${newUser.name}'s page`,
+      userId: newUser.id
+    });
+
+    res.status(201).json({
+      token,
+      ...newUser.dataValues,
+      homepage: {
+        ...homepage.dataValues,
+        stories: []
+      }
+    });
+
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
       return res
@@ -68,24 +89,19 @@ router.post("/signup", async (req, res) => {
 // The /me endpoint can be used to:
 // - get the users email & name using only their token
 // - checking if a token is (still) valid
-router.get("/me", authMiddleware, async (req, res, next) => {
+router.get("/me", authMiddleware, async (req, res) => {
   // don't send back the password hash
-  try {
-    const userId = req.user.dataValues["id"];
-    const user = await User.findByPk(userId, {
-      include: [
-        {
-          model: HomePage,
-          include: [Story]
-        }
-      ]
-    });
-    delete user.dataValues["password"];
-    res.status(200).send({ user });
-    // console.log(req.user.dataValues);
-  } catch (e) {
-    res.status(400).send({ message: "Something went wrong, sorry" });
-  }
+
+  delete req.user.dataValues["password"];
+  const user = req.user;
+  const homepage = await Homepage.findOne({
+    where: { userId: user.id },
+    include: [Story],
+    order: [[Story, "createdAt", "DESC"]]
+  });
+  // console.log(user, homepage);
+
+  res.status(200).send({ ...user.dataValues, homepage });
 });
 
 module.exports = router;

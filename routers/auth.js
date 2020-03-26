@@ -63,6 +63,8 @@ router.post("/signup", async (req, res) => {
 
     const homepage = await Homepage.create({
       title: `${newUser.name}'s page`,
+      backgroundColor: `#ffffff`,
+      color: `#000000`, 
       userId: newUser.id
     });
 

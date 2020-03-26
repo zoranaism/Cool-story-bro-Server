@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   story.associate = function(models) {
     story.belongsTo(models.homepage);
+    story.belongsToMany(models.user, {
+      through: "userStory",
+      foreignKey: "storyId",
+    });
   };
   return story;
 };

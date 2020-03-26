@@ -42,6 +42,25 @@ router.post("/:id/stories", auth, async (req, res) => {
 });
 
 
+router.delete("/:homepageId/stories/:storyId", auth, async (req, res, next) => {
+  const { storyId } = req.params;
+  try {
+    const story = await Story.findByPk(storyId);
+
+    if (!story) {
+      return res.status(404).send("Story not found.");
+    }
+
+    const result = await story.destroy();
+
+    console.log("This is the result", result);
+
+    res.json({ storyId });
+
+  } catch (e) {
+    next(e);
+  }
+});
 
 
 router.patch("/:id", auth, async (req, res) => {
@@ -68,31 +87,24 @@ router.patch("/:id", auth, async (req, res) => {
 });
 
 
-
-
-
 router.get("/", async (req, res, next) => {
   // const limit = req.params.limit || 10;
   // const offset = req.params.offset || 0;
 
   try {
     const allHomepages = await HomePage.findAll(
-      // {
+      {
       // limit,
       // offset,
-      // include: [Story],
-      // order: [[Story, "createdAt", "DESC"]]
-    // }
+      include: [Story],
+      order: [[Story, "createdAt", "DESC"]]
+    }
     );
     res.status(200).json(allHomepages);
   } catch (e) {
     next(e);
   }
 });
-
-
-
-
 
 
 

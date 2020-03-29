@@ -23,7 +23,9 @@ router.post("/login", async (req, res, next) => {
       where: { email },
       include: {
         model: Homepage,
-        include: [Story],
+        include: [
+          { model: Story, include: [{ model: User, attributes: ["id", "name"] }] }
+        ],
         order: [[Story, "createdAt", "DESC"]]
       }
     });
@@ -47,7 +49,9 @@ router.post("/signup", async (req, res) => {
   const { email, password, name } = req.body;
 
   if (!email || !password || !name) {
-    return res.status(400).send({ message: "Please provide an email, password and a name" });
+    return res
+      .status(400)
+      .send({ message: "Please provide an email, password and a name" });
   }
 
   try {
@@ -64,7 +68,7 @@ router.post("/signup", async (req, res) => {
     const homepage = await Homepage.create({
       title: `${newUser.name}'s page`,
       backgroundColor: `#ffffff`,
-      color: `#000000`, 
+      color: `#000000`,
       userId: newUser.id
     });
 
@@ -76,7 +80,6 @@ router.post("/signup", async (req, res) => {
         stories: []
       }
     });
-
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
       return res
@@ -98,7 +101,9 @@ router.get("/me", authMiddleware, async (req, res) => {
   const user = req.user;
   const homepage = await Homepage.findOne({
     where: { userId: user.id },
-    include: [Story],
+    include: [
+      { model: Story, include: [{ model: User, attributes: ["id", "name"] }] }
+    ],
     order: [[Story, "createdAt", "DESC"]]
   });
   // console.log(user, homepage);
